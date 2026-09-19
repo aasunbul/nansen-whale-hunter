@@ -69,9 +69,34 @@
   #combo { position:fixed; top:64px; left:50%; transform:translateX(-50%); font-size:20px; font-weight:800; color:#ffd166; z-index:10; opacity:0; transition:opacity .3s; }
   #pause-ov { position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:25; background:rgba(2,13,24,.8); font-size:36px; color:#ffd166; letter-spacing:6px; }
   @media (max-width: 900px){ body:not(.research) #term { display:none; } }
+
+  #key-modal { position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center; background:rgba(2,13,24,.97); }
+  #key-modal.show { display:flex; }
+  #key-box { max-width:480px; padding:30px; text-align:center; }
+  #key-box h3 { color:#ffd166; font-size:22px; margin-bottom:10px; }
+  #key-box p { color:#9fc3e0; font-size:12.5px; line-height:1.7; margin-bottom:16px; }
+  #key-box input { width:100%; padding:11px 12px; background:#04202f; border:1px solid #1d4a6b; color:#cfe8ff; border-radius:8px; font-family:inherit; font-size:13px; outline:none; }
+  #key-box input:focus { border-color:#ffd166; }
+  #key-box button { margin-top:14px; padding:11px 30px; background:#ffd166; color:#020d18; border:none; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; font-family:inherit; }
+  #key-err { color:#ff8f8f; font-size:11px; margin-top:8px; min-height:14px; }
+  #key-note { color:#3d7a9e; font-size:10.5px; margin-top:10px; }
+  #key-chip { position:absolute; top:10px; right:14px; z-index:40; background:#0c2a44; border:1px solid #1d4a6b; color:#9fc3e0; border-radius:8px; padding:5px 10px; font-size:10px; cursor:pointer; font-family:inherit; }
+
 </style>
 </head>
 <body>
+
+<div id="key-modal">
+  <div id="key-box">
+    <h3>🔑 Bring your Nansen API key</h3>
+    <p>This ocean runs on <b>your own</b> Nansen smart-money data. Grab a free-tier key at <b>docs.nansen.ai</b> → API keys, paste it below, and every whale, shark and terminal command pulls live flows for you.</p>
+    <input id="key-input" placeholder="nsn_..." autocomplete="off" spellcheck="false">
+    <div id="key-err"></div>
+    <button id="key-save">🔓 Unlock the ocean</button>
+    <div id="key-note">Your key is stored only in this browser (localStorage) and sent only to this Space's proxy to reach api.nansen.ai. Nothing is logged.</div>
+  </div>
+</div>
+<button id="key-chip" title="change API key">🔑 key</button>
 <div id="wrap">
   <div id="sea-panel">
     <div id="hud">
@@ -199,28 +224,76 @@ function diveAlert(w){
 }
 
 // ============ DATA ============
-const LIVE = { url: "http://127.0.0.1:8083/api/live", ok: false, lastTry: 0 };
-async function fetchLive(){
-  // live server (whale_live_server.py) — fresh smart-money flows, no API key in page
+// ============ BYO KEY (visitor's own Nansen subscription) ============
+const LIVE = { ok: false };
+let NKEY = localStorage.getItem("nansen_key") || "";
+const PROXIES = [
+  "https://varying-lately-vocabulary-rochester.trycloudflare.com",
+  ""   // same-origin (when hosted with the flask app)
+];
+let proxyIdx = 0;
+function nansenCall(path, payload){
+  if (!NKEY) return Promise.reject("no key");
+  const attempt = (i) => {
+    const base = PROXIES[(proxyIdx + i) % PROXIES.length];
+    return fetch((base ? base : "") + "/api/proxy", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ path, payload, apiKey: NKEY })
+    }).then(async r => {
+      const j = await r.json().catch(() => ({}));
+      if (j.credits_remaining) document.getElementById("key-chip").textContent = "🔑 " + j.credits_remaining + " cr";
+      if (!r.ok || j.error) throw (j.error || "proxy " + r.status);
+      proxyIdx = (proxyIdx + i) % PROXIES.length;   // remember working proxy
+      window.__lastCredits = j.credits_remaining;
+      return j.data;
+    }).catch(e => {
+      if (i + 1 < PROXIES.length) return attempt(i + 1);
+      throw e;
+    });
+  };
+  return attempt(0);
+}
+let liveChainIdx = 0;
+const LIVE_CHAINS = ["ethereum","solana","base","arbitrum","bnb","polygon"];
+function mapRows(rows, chain){
+  return rows.map(f => ({
+    token: (f.token_symbol||"?").strip ? (f.token_symbol||"?").trim() : (f.token_symbol||"?"),
+    token_address: f.token_address||"",
+    chain: f.chain||chain,
+    net_1h: f.net_flow_1h_usd||0, net_24h: f.net_flow_24h_usd||0,
+    net_7d: f.net_flow_7d_usd||0, net_30d: f.net_flow_30d_usd||0,
+    traders: f.trader_count||0, sector: (f.token_sectors||["?"])[0], mcap: f.market_cap_usd||0
+  }));
+}
+async function fetchLive(multi){
+  if (!NKEY) return null;
+  const chains = multi ? 3 : 2;   // 3 at boot, 2 per refresh (visitor credits!)
+  const picks = [];
+  for (let i = 0; i < chains; i++) picks.push(LIVE_CHAINS[liveChainIdx++ % LIVE_CHAINS.length]);
   try {
-    const r = await fetch(LIVE.url, {cache: "no-store"});
-    if (r.ok) {
-      const j = await r.json();
-      LIVE.ok = true;
-      return j.flows || [];
-    }
-  } catch(e) { LIVE.ok = false; }
-  return null;
+    const results = await Promise.all(picks.map(chain =>
+      nansenCall("smart-money/netflow", { chains: [chain], pagination: { page: 1, per_page: 100 } })
+        .then(body => mapRows((body && body.data) || [], chain))
+        .catch(() => [])
+    ));
+    const merged = [].concat(...results);
+    LIVE.ok = merged.length > 0;
+    return merged.length ? merged : null;
+  } catch(e){ LIVE.ok = false; return null; }
 }
 async function loadFlows(){
   // 1) try live server (fresh data, rotating chains)
-  const live = await fetchLive();
+  const live = await fetchLive(true);
   if (live && live.length) {
-    flowPool = live.filter(x => Math.abs(x.net_24h) > 500);
+    const seen = {};
+    flowPool.forEach(f => seen[f.token + "|" + f.chain] = f);
+    live.forEach(f => { if (Math.abs(f.net_24h) > 500) seen[f.token + "|" + f.chain] = f; });
+    flowPool = Object.values(seen);
     flowPool.sort((a,b) => Math.abs(b.net_24h) - Math.abs(a.net_24h));
     document.getElementById("s-feed").textContent = flowPool.length + " LIVE";
     document.getElementById("live-dot").textContent = "● LIVE";
-    tprint(`<span class="t-ok">◉ live feed connected — fresh nansen flows (chain: ${live[0] ? live[0].chain : "?"})</span>`);
+    tprint(`<span class="t-ok">◉ YOUR live nansen feed — chain ${live[0] ? live[0].chain : "?"} · ${live.length} flows</span>`);
     return flowPool.length;
   }
   // 2) fallback: freshest daily snapshot
@@ -245,16 +318,16 @@ async function loadFlows(){
 }
 // keep the ocean fresh: pull live every 2 min (rate-guarded server-side)
 setInterval(async () => {
-  const live = await fetchLive();
+  const live = await fetchLive(false);
   if (live && live.length) {
-    const fresh = live.filter(x => Math.abs(x.net_24h) > 500);
-    if (fresh.length) {
-      flowPool = fresh.sort((a,b) => Math.abs(b.net_24h) - Math.abs(a.net_24h));
-      document.getElementById("s-feed").textContent = flowPool.length + " LIVE";
-      document.getElementById("live-dot").textContent = "● LIVE";
-    }
+    const seen = {};
+    flowPool.forEach(f => seen[f.token + "|" + f.chain] = f);
+    live.forEach(f => { if (Math.abs(f.net_24h) > 500) seen[f.token + "|" + f.chain] = f; });
+    flowPool = Object.values(seen).sort((a,b) => Math.abs(b.net_24h) - Math.abs(a.net_24h));
+    document.getElementById("s-feed").textContent = flowPool.length + " LIVE";
+    document.getElementById("live-dot").textContent = "● LIVE";
   }
-}, 120000);
+}, 300000);
 
 const CHAIN_COLORS = { ethereum:"#8ba3ff", solana:"#c79bff", base:"#6fd6ff", arbitrum:"#7ce8c7", bnb:"#ffd166", bsc:"#ffd166", polygon:"#ff9bd2" };
 const chainColor = ch => CHAIN_COLORS[(ch||"").toLowerCase()] || "#9fc3e0";
@@ -693,11 +766,48 @@ document.getElementById("term-input").addEventListener("keydown", e => {
   handleCmd(cmd);
 });
 
-// ============ BOOT ============
-loadFlows().then(n => {
-  tprint(`<span class="t-dim">WhaleTerm v4 — nansen smart-money research shell</span>`);
-  if (n) tprint(`<span class="t-ok">feed loaded · ${n} real flows · click PLAY or RESEARCH</span>`);
+// ============ KEY GATE ============
+const keyModal = document.getElementById("key-modal");
+function showKey(){ keyModal.classList.add("show"); document.getElementById("key-input").focus(); }
+document.getElementById("key-chip").addEventListener("click", showKey);
+async function validateKey(k){
+  // one cheap call to verify — raw fetch via PROXIES with the CANDIDATE key (NKEY not set yet)
+  for (let i = 0; i < PROXIES.length; i++){
+    const base = PROXIES[i];
+    try {
+      const r = await fetch((base ? base : "") + "/api/proxy", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ path: "smart-money/netflow", payload: {chains:["ethereum"], pagination:{page:1,per_page:5}}, apiKey: k })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.data){
+        proxyIdx = i;
+        return { ok: true, credits: j.credits_remaining };
+      }
+      if (j.error) return { ok: false, err: j.error };
+    } catch(e){ /* try next proxy */ }
+  }
+  return { ok: false, err: "no proxy reachable" };
+}
+document.getElementById("key-save").addEventListener("click", async () => {
+  const k = document.getElementById("key-input").value.trim();
+  const err = document.getElementById("key-err");
+  if (!k.startsWith("nsn_")) { err.textContent = "keys start with nsn_ — check docs.nansen.ai"; return; }
+  err.textContent = "checking key…";
+  const v = await validateKey(k);
+  if (v.ok){
+    NKEY = k; localStorage.setItem("nansen_key", k);
+    keyModal.classList.remove("show");
+    tprint(`<span class="t-ok">🔑 key accepted — credits left: ${v.credits ?? "?"}</span>`);
+    loadFlows();                      // round 1 (3 chains)
+    setTimeout(loadFlows, 25000);     // round 2 (3 more chains)
+  } else err.textContent = "key rejected: " + v.err;
 });
+
+// ============ BOOT ============
+tprint(`<span class="t-dim">WhaleTerm v5 — nansen smart-money research shell</span>`);
+if (NKEY){ loadFlows(); }
+else { showKey(); }
 </script>
 </body>
 </html>
