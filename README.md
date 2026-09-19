@@ -1,6 +1,9 @@
 # 🐋 Whale Hunter
 
-**Hunt real whales. Live Nansen smart-money flows become the ocean.**
+**Two products, one ocean: an arcade hunt + a smart-money research terminal — both powered by live Nansen flows.**
+
+- 🎮 **PLAY** — timed/endless arcade: catch inflow-whales, dodge outflow-sharks, combos, sonar, waves
+- 🔍 **RESEARCH** — WhaleTerm: a full-screen smart-money shell with a market dashboard and query commands
 
 Built for the **Nansen Meridian Buildathon** (Sep 14–27, 2026). A arcade game where every whale you catch is a **real, live smart-money flow** — token symbol, chain, and USD size come straight from the Nansen API.
 
