@@ -7,19 +7,37 @@
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:#03111f; color:#cfe8ff; font-family:'Segoe UI',system-ui,sans-serif; overflow:hidden; height:100vh; user-select:none; }
-  #hud { position:fixed; top:0; left:0; right:0; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; z-index:10;
-         background:linear-gradient(180deg,rgba(3,17,31,.95),transparent); }
-  #hud .logo { font-size:17px; font-weight:700; letter-spacing:2px; }
+  #hud { position:fixed; top:0; left:0; right:0; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; z-index:10;
+         background:linear-gradient(180deg,rgba(3,17,31,.95),transparent); gap:14px; flex-wrap:wrap; }
+  #hud .logo { font-size:17px; font-weight:700; letter-spacing:2px; white-space:nowrap; }
   #hud .logo b { color:#ffd166; }
-  #score-box { display:flex; gap:22px; font-size:12px; color:#8ab6d6; }
-  #score-box b { color:#ffe9a3; font-size:17px; display:block; font-family:monospace; }
-  #start { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:30; background:rgba(3,17,31,.96); text-align:center; }
-  #start h1 { font-size:44px; color:#ffd166; text-shadow:0 0 30px rgba(255,209,102,.4); }
-  #start p { margin-top:14px; max-width:560px; line-height:1.7; color:#9fc3e0; font-size:14px; }
-  #start button { margin-top:26px; font-size:18px; padding:13px 44px; background:#ffd166; color:#03111f; border:none; border-radius:10px; cursor:pointer; font-weight:700; }
-  #start button:hover { transform:scale(1.05); }
-  #fact { position:fixed; bottom:14px; left:50%; transform:translateX(-50%); font-size:12px; color:#5a8aa8; z-index:10; text-align:center; width:90%; }
-  #combo { position:fixed; top:70px; left:50%; transform:translateX(-50%); font-size:22px; font-weight:800; color:#ffd166; z-index:10; opacity:0; transition:opacity .3s; text-shadow:0 0 12px rgba(255,209,102,.6); }
+  #score-box { display:flex; gap:20px; font-size:11px; color:#8ab6d6; }
+  #score-box b { color:#ffe9a3; font-size:16px; display:block; font-family:monospace; }
+  #timer { color:#ffd166 !important; } #timer b { color:#ffd166 !important; }
+  #btn-pause { background:#0c2a44; border:1px solid #1d4a6b; color:#9fc3e0; border-radius:8px; padding:6px 12px; cursor:pointer; font-size:12px; }
+  #start { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:30; background:rgba(3,17,31,.97); text-align:center; padding:20px; }
+  #start h1 { font-size:46px; color:#ffd166; text-shadow:0 0 30px rgba(255,209,102,.4); }
+  #start p { margin-top:12px; max-width:620px; line-height:1.7; color:#9fc3e0; font-size:14px; }
+  .mode-row { display:flex; gap:14px; margin-top:26px; flex-wrap:wrap; justify-content:center; }
+  .mode-btn { font-size:16px; padding:14px 30px; border-radius:12px; cursor:pointer; font-weight:700; border:2px solid #1d4a6b; background:#0c2a44; color:#cfe8ff; }
+  .mode-btn:hover { transform:scale(1.05); border-color:#ffd166; }
+  .mode-btn small { display:block; font-weight:400; font-size:11px; color:#8ab6d6; margin-top:4px; }
+  .legend { margin-top:26px; display:flex; gap:24px; font-size:12px; color:#8ab6d6; flex-wrap:wrap; justify-content:center; }
+  .legend span { display:flex; align-items:center; gap:6px; }
+  .dot { width:14px; height:14px; border-radius:50%; display:inline-block; }
+  #end { position:fixed; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:30; background:rgba(3,17,31,.96); text-align:center; }
+  #end h2 { font-size:34px; color:#ffd166; }
+  #end .stats { display:grid; grid-template-columns:repeat(2,minmax(150px,1fr)); gap:12px 40px; margin-top:20px; font-size:13px; color:#9fc3e0; text-align:left; }
+  #end .stats b { color:#ffe9a3; font-family:monospace; float:right; }
+  .end-row { display:flex; gap:14px; margin-top:28px; flex-wrap:wrap; justify-content:center; }
+  .end-btn { font-size:15px; padding:12px 26px; border-radius:10px; cursor:pointer; font-weight:700; border:none; }
+  #btn-again { background:#ffd166; color:#03111f; }
+  #btn-share { background:#0c2a44; color:#cfe8ff; border:1px solid #1d4a6b; text-decoration:none; display:inline-flex; align-items:center; }
+  #newrecord { color:#7dffb2; font-weight:700; margin-top:12px; display:none; }
+  #fact { position:fixed; bottom:12px; left:50%; transform:translateX(-50%); font-size:11px; color:#5a8aa8; z-index:10; text-align:center; width:92%; }
+  #combo { position:fixed; top:66px; left:50%; transform:translateX(-50%); font-size:22px; font-weight:800; color:#ffd166; z-index:10; opacity:0; transition:opacity .3s; text-shadow:0 0 12px rgba(255,209,102,.6); }
+  #sonar-hint { position:fixed; bottom:34px; left:50%; transform:translateX(-50%); font-size:11px; color:#3d7a9e; z-index:10; }
+  #pause-ov { position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:25; background:rgba(3,17,31,.8); font-size:40px; color:#ffd166; letter-spacing:6px; }
   canvas { display:block; cursor:crosshair; }
 </style>
 </head>
@@ -27,18 +45,47 @@
 <div id="hud">
   <div class="logo">🐋 <b>WHALE</b> HUNTER</div>
   <div id="score-box">
+    <div id="timer" style="display:none">TIME<b id="s-time">60</b></div>
     <div>SCORE<b id="s-score">0</b></div>
-    <div>WHALES CAUGHT<b id="s-caught">0</b></div>
+    <div>CAUGHT<b id="s-caught">0</b></div>
     <div>BEST CATCH<b id="s-best">$0</b></div>
+    <div>WAVE<b id="s-wave">1</b></div>
     <div>LIVE FEED<b id="s-feed">—</b></div>
   </div>
+  <button id="btn-pause">⏸ Pause</button>
 </div>
 <div id="combo"></div>
-<div id="fact">Every whale is a REAL smart-money flow from Nansen — token symbol, chain and USD size are live.</div>
+<div id="sonar-hint">SPACE = sonar pulse (200 pts) · P = pause</div>
+<div id="fact">Every whale is a REAL smart-money flow from Nansen. 🦈 Sharks are outflows — don't click them!</div>
+<div id="pause-ov">PAUSED</div>
 <div id="start">
   <h1>🐋 WHALE HUNTER</h1>
-  <p>Hunt real whales from live Nansen smart-money flows. Big inflows surface as whales — click to catch them before they dive. The bigger the flow, the bigger the whale, the bigger the score. Rare ⭐ GOLDEN whales = mega flows over $100K.</p>
-  <button id="btn-start">START HUNT</button>
+  <p>Hunt real whales from live Nansen smart-money flows across 6 chains. Big inflows surface as whales — click to catch before they dive. ⭐ Golden whales = flows over $100K. 🦈 Sharks are <b>outflows</b> (smart money leaving) — catching them COSTS you. Speed rises every wave.</p>
+  <div class="legend">
+    <span><span class="dot" style="background:linear-gradient(180deg,#7fb7d9,#33607e)"></span> Whale (inflow)</span>
+    <span><span class="dot" style="background:linear-gradient(180deg,#ffe9a3,#d4a017)"></span> ⭐ Golden ($100K+)</span>
+    <span><span class="dot" style="background:linear-gradient(180deg,#8a93a6,#3c4453)"></span> 🦈 Shark (outflow)</span>
+  </div>
+  <div class="mode-row">
+    <button class="mode-btn" id="btn-timed">⏱ TIMED HUNT<small>60 seconds · chase the high score</small></button>
+    <button class="mode-btn" id="btn-endless">🌊 ENDLESS<small>relaxed · how big can you catch?</small></button>
+  </div>
+</div>
+<div id="end">
+  <h2 id="end-title">HUNT OVER</h2>
+  <div id="newrecord">🏆 NEW RECORD!</div>
+  <div class="stats">
+    <div>Final score <b id="e-score">0</b></div>
+    <div>Whales caught <b id="e-caught">0</b></div>
+    <div>Biggest catch <b id="e-best">$0</b></div>
+    <div>Best combo <b id="e-combo">×0</b></div>
+    <div>Accuracy <b id="e-acc">0%</b></div>
+    <div>Golden whales <b id="e-gold">0</b></div>
+  </div>
+  <div class="end-row">
+    <button class="end-btn" id="btn-again">↻ HUNT AGAIN</button>
+    <a class="end-btn" id="btn-share" target="_blank" rel="noopener">🐦 Share score</a>
+  </div>
 </div>
 <canvas id="sea"></canvas>
 <script>
@@ -47,18 +94,41 @@ let W, H;
 function resize(){ W = cv.width = innerWidth; H = cv.height = innerHeight; }
 addEventListener("resize", resize); resize();
 
+// ============ AUDIO (WebAudio synth, no files) ============
+let AC = null;
+function audio(){ if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} } return AC; }
+function blip(freq, dur, type, vol){
+  const ac = audio(); if (!ac) return;
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || "sine"; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol || 0.12, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + (dur || 0.15));
+  o.connect(g); g.connect(ac.destination);
+  o.start(); o.stop(ac.currentTime + (dur || 0.15) + 0.02);
+}
+const sfx = {
+  catch: (n) => blip(440 + Math.min(n,8)*70, 0.16, "sine", 0.14),
+  golden: () => { blip(660,0.12,"triangle",0.16); setTimeout(()=>blip(880,0.12,"triangle",0.16),90); setTimeout(()=>blip(1320,0.2,"triangle",0.16),180); },
+  shark:  () => blip(110, 0.35, "sawtooth", 0.16),
+  miss:   () => blip(180, 0.08, "sine", 0.05),
+  wave:   () => blip(520, 0.25, "triangle", 0.1),
+  sonar:  () => blip(300, 0.5, "sine", 0.12),
+  end:    () => { blip(392,0.2,"sine",0.14); setTimeout(()=>blip(494,0.2,"sine",0.14),160); setTimeout(()=>blip(587,0.4,"sine",0.14),320); }
+};
+
 // ============ GAME STATE ============
-let whales = [], ripples = [], bubbles = [];
-let score = 0, caught = 0, best = 0, combo = 0, comboTimer = 0;
-let running = false, spawnTimer = 0, feedName = "—";
-let flowPool = [];  // real flows from Nansen
-let flowIdx = 0;
+let whales = [], ripples = [], bubbles = [], floaties = [];
+let score = 0, caught = 0, best = 0, combo = 0, comboTimer = 0, maxCombo = 0, goldenCaught = 0, clicks = 0, hits = 0;
+let running = false, paused = false, spawnTimer = 0;
+let mode = "timed";             // timed | endless
+let timeLeft = 60, wave = 1, waveTimer = 0;
+let sonarUntil = 0, sonarCD = 0;
+let flowPool = [], flowIdx = 0;
 
 // ============ REAL DATA ============
 async function loadFlows(){
-  const day = new Date().toISOString().slice(0,10).replace(/-/g,"");
   const cands = [];
-  for (let d = 0; d <= 12; d++) {
+  for (let d = 0; d <= 14; d++) {
     const dt = new Date(Date.now() - d*864e5).toISOString().slice(0,10).replace(/-/g,"");
     cands.push(`data/flows_${dt}.json`);
   }
@@ -66,7 +136,6 @@ async function loadFlows(){
     try { const r = await fetch(f); if (r.ok) {
       const j = await r.json();
       flowPool = j.flows.filter(x => Math.abs(x.net_24h) > 500);
-      // sort big first for drama
       flowPool.sort((a,b) => Math.abs(b.net_24h) - Math.abs(a.net_24h));
       document.getElementById("s-feed").textContent = flowPool.length + " flows";
       return;
@@ -75,98 +144,167 @@ async function loadFlows(){
   document.getElementById("s-feed").textContent = "offline";
 }
 loadFlows();
-setInterval(loadFlows, 15*60*1000); // refresh every 15 min
+setInterval(loadFlows, 15*60*1000);
 
-// ============ WHALE SPAWNER (from real flows) ============
+const CHAIN_COLORS = { ethereum:"#8ba3ff", solana:"#c79bff", base:"#6fd6ff", arbitrum:"#7ce8c7", bnb:"#ffd166", polygon:"#ff9bd2", bsc:"#ffd166" };
+function chainColor(ch){ return CHAIN_COLORS[(ch||"").toLowerCase()] || "#9fc3e0"; }
+
+// ============ SPAWNER ============
 function nextFlow(){
-  if (!flowPool.length) return {token:"???","chain":"?",net_24h: 10000, traders: 1};
-  const f = flowPool[flowIdx % flowPool.length];
-  flowIdx += 1 + Math.floor(Math.random()*3);
+  if (!flowPool.length) return {token:"???","chain":"ethereum",net_24h: 10000, traders: 1, sector:"?"};
+  // mix: 78% biggest-first drama, 22% random
+  let f;
+  if (Math.random() < 0.78) { f = flowPool[flowIdx % flowPool.length]; flowIdx += 1 + Math.floor(Math.random()*3); }
+  else f = flowPool[Math.floor(Math.random()*flowPool.length)];
   return f;
 }
 
 function spawnWhale(){
   const f = nextFlow();
   const usd = Math.abs(f.net_24h);
-  const golden = usd >= 100000;
-  const size = Math.min(30 + Math.sqrt(usd)/55, 85); // 30..85 px
+  const isShark = f.net_24h < 0;                  // OUTFLOW = shark
+  const golden = !isShark && usd >= 100000;
+  const size = isShark ? 34 + Math.min(Math.sqrt(usd)/70, 34) : Math.min(30 + Math.sqrt(usd)/55, 85);
   const dir = Math.random() < .5 ? 1 : -1;
+  const waveSpeed = 1 + (wave - 1) * 0.14;        // waves raise speed
   whales.push({
     x: dir === 1 ? -size*2 : W + size*2,
-    y: H*0.28 + Math.random()*H*0.58,
-    vx: dir * (0.55 + Math.random()*0.7 + (golden?0.4:0)),
-    size, golden, f,
+    y: H*0.26 + Math.random()*H*0.6,
+    vx: dir * (0.55 + Math.random()*0.7 + (golden?0.45:0) + (isShark?0.5:0)) * waveSpeed,
+    size, golden, isShark, f,
     phase: Math.random()*7,
-    diveAfter: 6 + Math.random()*7,      // seconds on screen
-    age: 0,
-    tailPhase: Math.random()*7,
+    diveAfter: (6 + Math.random()*7) / waveSpeed,
+    age: 0, tailPhase: Math.random()*7,
   });
 }
 
+// ============ FLOATY TEXT ============
+function floaty(x, y, text, color){
+  floaties.push({x, y, text, color: color || "#ffe9a3", a: 1});
+}
+
 // ============ DRAWING ============
-function drawWhale(w){
-  const {x, y, size, golden} = w;
+function drawWhale(w, now){
+  const {x, y, size, golden, isShark} = w;
+  const diving = (w.diveAfter - w.age) < 1.5;      // about to dive → blink
   ctx.save();
   ctx.translate(x, y);
   const face = w.vx > 0 ? 1 : -1;
   ctx.scale(face, 1);
   const bob = Math.sin(w.phase) * size*0.06;
   ctx.translate(0, bob);
+  if (diving && Math.floor(now/140) % 2 === 0) ctx.globalAlpha = 0.45;
 
-  // glow for golden
   if (golden) { ctx.shadowColor = "#ffd166"; ctx.shadowBlur = 34; }
+  if (isShark) { ctx.shadowColor = "#ff5a5a"; ctx.shadowBlur = 18; }
 
-  // body
-  const grad = ctx.createLinearGradient(0, -size/2, 0, size/2);
-  if (golden) { grad.addColorStop(0, "#ffe9a3"); grad.addColorStop(1, "#d4a017"); }
-  else { grad.addColorStop(0, "#7fb7d9"); grad.addColorStop(1, "#33607e"); }
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.moveTo(-size*1.1, 0);
-  ctx.quadraticCurveTo(-size*0.6, -size*0.55, size*0.25, -size*0.48);
-  ctx.quadraticCurveTo(size*0.95, -size*0.42, size*1.05, -size*0.05);
-  ctx.quadraticCurveTo(size*0.95, size*0.16, size*0.3, size*0.28);
-  ctx.quadraticCurveTo(-size*0.55, size*0.42, -size*1.1, 0);
-  ctx.fill();
-  ctx.shadowBlur = 0;
-
-  // tail (animated)
-  const tail = Math.sin(w.tailPhase) * size*0.22;
-  ctx.fillStyle = golden ? "#d4a017" : "#33607e";
-  ctx.beginPath();
-  ctx.moveTo(-size*1.02, 0);
-  ctx.quadraticCurveTo(-size*1.45, tail - size*0.3, -size*1.7, tail - size*0.42);
-  ctx.quadraticCurveTo(-size*1.45, tail, -size*1.7, tail + size*0.34);
-  ctx.quadraticCurveTo(-size*1.4, tail + size*0.16, -size*1.02, 0);
-  ctx.fill();
-
-  // fin
-  ctx.beginPath();
-  ctx.moveTo(size*0.1, size*0.2);
-  ctx.quadraticCurveTo(-size*0.05, size*0.62, -size*0.38, size*0.5);
-  ctx.quadraticCurveTo(-size*0.2, size*0.3, size*0.1, size*0.2);
-  ctx.fill();
-
-  // eye
-  ctx.fillStyle = "#0a1a26";
-  ctx.beginPath(); ctx.arc(size*0.62, -size*0.12, size*0.055, 0, 7); ctx.fill();
-  // water spout sometimes
-  if (Math.sin(w.phase*0.7) > 0.93) {
-    ctx.strokeStyle = "rgba(159,195,224,.7)"; ctx.lineWidth = 2;
+  if (isShark) {
+    // ---- SHARK: gray angular body + dorsal fin ----
+    const g = ctx.createLinearGradient(0, -size/2, 0, size/2);
+    g.addColorStop(0, "#8a93a6"); g.addColorStop(1, "#3c4453");
+    ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.moveTo(size*0.35, -size*0.5);
-    ctx.quadraticCurveTo(size*0.35, -size*1.0, size*0.15, -size*1.15);
-    ctx.stroke();
+    ctx.moveTo(-size*1.25, 0);
+    ctx.quadraticCurveTo(-size*0.5, -size*0.42, size*0.55, -size*0.3);
+    ctx.quadraticCurveTo(size*1.25, -size*0.16, size*1.3, size*0.02);   // snout
+    ctx.quadraticCurveTo(size*0.6, size*0.34, -size*1.25, 0);
+    ctx.fill();
+    // dorsal fin
+    ctx.beginPath();
+    ctx.moveTo(size*0.1, -size*0.28);
+    ctx.lineTo(-size*0.18, -size*0.85);
+    ctx.lineTo(-size*0.5, -size*0.26);
+    ctx.closePath(); ctx.fill();
+    // tail
+    const tl = Math.sin(w.tailPhase) * size*0.2;
+    ctx.beginPath();
+    ctx.moveTo(-size*1.2, 0);
+    ctx.lineTo(-size*1.65, tl - size*0.4);
+    ctx.lineTo(-size*1.45, tl);
+    ctx.lineTo(-size*1.65, tl + size*0.3);
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+    // eye + gills + teeth
+    ctx.fillStyle = "#12161c";
+    ctx.beginPath(); ctx.arc(size*0.85, -size*0.06, size*0.05, 0, 7); ctx.fill();
+    ctx.strokeStyle = "rgba(18,22,28,.55)"; ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath(); ctx.moveTo(size*(0.42 - i*0.12), -size*0.2); ctx.lineTo(size*(0.36 - i*0.12), size*0.12); ctx.stroke();
+    }
+    ctx.fillStyle = "#eef3f8";
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.moveTo(size*(1.05 + i*0.06), size*0.02);
+      ctx.lineTo(size*(1.02 + i*0.06), size*0.14);
+      ctx.lineTo(size*(0.99 + i*0.06), size*0.02);
+      ctx.closePath(); ctx.fill();
+    }
+  } else {
+    // ---- WHALE ----
+    const grad = ctx.createLinearGradient(0, -size/2, 0, size/2);
+    if (golden) { grad.addColorStop(0, "#ffe9a3"); grad.addColorStop(1, "#d4a017"); }
+    else {
+      const cc = chainColor(w.f.chain);
+      grad.addColorStop(0, "#7fb7d9"); grad.addColorStop(1, "#33607e");
+    }
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(-size*1.1, 0);
+    ctx.quadraticCurveTo(-size*0.6, -size*0.55, size*0.25, -size*0.48);
+    ctx.quadraticCurveTo(size*0.95, -size*0.42, size*1.05, -size*0.05);
+    ctx.quadraticCurveTo(size*0.95, size*0.16, size*0.3, size*0.28);
+    ctx.quadraticCurveTo(-size*0.55, size*0.42, -size*1.1, 0);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // chain stripe on back
+    ctx.fillStyle = chainColor(w.f.chain);
+    ctx.globalAlpha = diving && Math.floor(now/140)%2===0 ? 0.45 : 0.85;
+    ctx.beginPath();
+    ctx.moveTo(-size*0.55, -size*0.32);
+    ctx.quadraticCurveTo(size*0.1, -size*0.52, size*0.7, -size*0.3);
+    ctx.quadraticCurveTo(size*0.1, -size*0.3, -size*0.55, -size*0.18);
+    ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = diving && Math.floor(now/140)%2===0 ? 0.45 : 1;
+    // tail
+    const tail = Math.sin(w.tailPhase) * size*0.22;
+    ctx.fillStyle = golden ? "#d4a017" : "#33607e";
+    ctx.beginPath();
+    ctx.moveTo(-size*1.02, 0);
+    ctx.quadraticCurveTo(-size*1.45, tail - size*0.3, -size*1.7, tail - size*0.42);
+    ctx.quadraticCurveTo(-size*1.45, tail, -size*1.7, tail + size*0.34);
+    ctx.quadraticCurveTo(-size*1.4, tail + size*0.16, -size*1.02, 0);
+    ctx.fill();
+    // fin
+    ctx.beginPath();
+    ctx.moveTo(size*0.1, size*0.2);
+    ctx.quadraticCurveTo(-size*0.05, size*0.62, -size*0.38, size*0.5);
+    ctx.quadraticCurveTo(-size*0.2, size*0.3, size*0.1, size*0.2);
+    ctx.fill();
+    // eye
+    ctx.fillStyle = "#0a1a26";
+    ctx.beginPath(); ctx.arc(size*0.62, -size*0.12, size*0.055, 0, 7); ctx.fill();
+    // spout
+    if (Math.sin(w.phase*0.7) > 0.93) {
+      ctx.strokeStyle = "rgba(159,195,224,.7)"; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(size*0.35, -size*0.5);
+      ctx.quadraticCurveTo(size*0.35, -size*1.0, size*0.15, -size*1.15);
+      ctx.stroke();
+    }
   }
 
-  // token label above whale
+  // label above (bigger during sonar)
   const usd = Math.abs(w.f.net_24h);
-  const lbl = `${w.f.token} · $${usd >= 1000 ? (usd/1000).toFixed(0)+"K" : usd}`;
-  ctx.font = `${golden ? "700 " : ""}${Math.max(11, size*0.2)}px Segoe UI`;
+  const sonarOn = performance.now() < sonarUntil;
+  const lbl = `${isShark ? "🦈 " : golden ? "⭐ " : ""}${w.f.token} · $${usd >= 1000 ? (usd/1000).toFixed(0)+"K" : usd.toFixed(0)}`;
+  ctx.font = `${golden || isShark ? "700 " : ""}${Math.max(11, size*(sonarOn ? 0.26 : 0.2))}px Segoe UI`;
   ctx.textAlign = "center";
-  ctx.fillStyle = golden ? "#ffd166" : "#9fc3e0";
+  ctx.fillStyle = isShark ? "#ff8f8f" : golden ? "#ffd166" : "#9fc3e0";
   ctx.fillText(lbl, 0, -size*0.85 - 6);
-
+  if (sonarOn && !isShark) {
+    ctx.strokeStyle = "rgba(255,209,102,.5)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, size*1.6, 0, 7); ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -174,12 +312,11 @@ function drawWhale(w){
 let last = performance.now();
 function loop(now){
   const dt = Math.min((now - last)/1000, 0.05); last = now;
-  // deep-sea gradient
+
   const sea = ctx.createLinearGradient(0, 0, 0, H);
   sea.addColorStop(0, "#06233c"); sea.addColorStop(0.6, "#041a2f"); sea.addColorStop(1, "#020f1d");
   ctx.fillStyle = sea; ctx.fillRect(0, 0, W, H);
 
-  // light rays
   ctx.save(); ctx.globalAlpha = 0.06;
   for (let i = 0; i < 5; i++){
     const rx = (i*0.22 + 0.08) * W + Math.sin(now/4000 + i)*40;
@@ -190,75 +327,163 @@ function loop(now){
   }
   ctx.restore();
 
-  // bubbles
   if (Math.random() < 0.15) bubbles.push({x: Math.random()*W, y: H+10, r: 1+Math.random()*3, v: 20+Math.random()*30});
   ctx.strokeStyle = "rgba(159,214,255,.25)";
   bubbles.forEach(b => { b.y -= b.v*dt; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.stroke(); });
   bubbles = bubbles.filter(b => b.y > -10);
 
-  if (running){
+  if (running && !paused){
+    // wave progression
+    waveTimer += dt;
+    if (waveTimer >= 25){ wave++; waveTimer = 0; sfx.wave(); floaty(W/2, H*0.2, `WAVE ${wave} — faster!`, "#7dffb2"); }
+    document.getElementById("s-wave").textContent = wave;
+
+    // timed countdown
+    if (mode === "timed"){
+      timeLeft -= dt;
+      document.getElementById("s-time").textContent = Math.max(0, Math.ceil(timeLeft));
+      if (timeLeft <= 0){ endGame(); }
+    }
+    if (sonarCD > 0) sonarCD -= dt;
+
     spawnTimer -= dt;
-    if (spawnTimer <= 0){ spawnWhale(); spawnTimer = 0.9 + Math.random()*1.6; }
+    if (spawnTimer <= 0){ spawnWhale(); spawnTimer = Math.max(0.35, (0.9 + Math.random()*1.6) - (wave-1)*0.06); }
 
     whales.forEach(w => {
       w.x += w.vx * dt * 60; w.phase += dt*2.2; w.tailPhase += dt*6; w.age += dt;
-      drawWhale(w);
+      drawWhale(w, now);
     });
     whales = whales.filter(w => w.x > -w.size*3 && w.x < W + w.size*3 && w.age < w.diveAfter);
 
-    // combo decay
     if (comboTimer > 0){ comboTimer -= dt; if (comboTimer <= 0){ combo = 0; } }
+  } else {
+    whales.forEach(w => drawWhale(w, now));  // render while paused/start
   }
 
-  // catch ripples
   ripples.forEach(r => { r.r += r.v*dt; r.a -= dt*1.6;
     ctx.strokeStyle = `rgba(255,209,102,${Math.max(r.a,0)})`; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, 7); ctx.stroke(); });
   ripples = ripples.filter(r => r.a > 0);
 
+  floaties.forEach(f => { f.y -= 34*dt; f.a -= dt*0.9;
+    ctx.globalAlpha = Math.max(f.a, 0);
+    ctx.font = "700 15px Segoe UI"; ctx.textAlign = "center";
+    ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y);
+    ctx.globalAlpha = 1; });
+  floaties = floaties.filter(f => f.a > 0);
+
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
-// background-tab fallback: rAF dies in hidden tabs — keep the sea alive via interval
-setInterval(() => { if (document.hidden) { loop(performance.now()); } }, 100);
+setInterval(() => { if (document.hidden) loop(performance.now()); }, 100);
+
+// ============ CATCH ============
+function hud(){
+  document.getElementById("s-score").textContent = Math.max(0,score).toLocaleString("en-US");
+  document.getElementById("s-caught").textContent = caught;
+  document.getElementById("s-best").textContent = "$" + (best >= 1000 ? (best/1000).toFixed(0)+"K" : best.toFixed(0));
+}
 cv.addEventListener("click", e => {
-  if (!running) return;
+  if (!running || paused) return;
   const x = e.clientX, y = e.clientY;
-  // topmost whale first (iterate reverse)
+  clicks++;
   for (let i = whales.length - 1; i >= 0; i--){
     const w = whales[i];
     const dx = x - w.x, dy = y - w.y;
     if (Math.abs(dx) < w.size*1.5 && Math.abs(dy) < w.size*0.9){
+      hits++;
       const usd = Math.abs(w.f.net_24h);
-      combo++; comboTimer = 2.2;
-      const mult = 1 + Math.min(combo-1, 5) * 0.5;      // up to x3.5
+      if (w.isShark){
+        // 🦈 OUTFLOW — penalty!
+        const pen = 150 + Math.round(usd/200);
+        score -= pen; combo = 0; comboTimer = 0;
+        sfx.shark();
+        floaty(w.x, w.y, `🦈 −${pen}`, "#ff8f8f");
+        ripples.push({x: w.x, y: w.y, r: w.size*0.5, v: 260, a: 1});
+        whales.splice(i, 1); hud();
+        return;
+      }
+      combo++; comboTimer = 2.4; maxCombo = Math.max(maxCombo, combo);
+      const mult = 1 + Math.min(combo-1, 5) * 0.5;
       const pts = Math.round(usd/100) + (w.golden ? 250 : 0);
       const gained = Math.round(pts * mult);
       score += gained; caught++;
       best = Math.max(best, usd);
-      document.getElementById("s-score").textContent = score.toLocaleString();
-      document.getElementById("s-caught").textContent = caught;
-      document.getElementById("s-best").textContent = "$" + (best >= 1000 ? (best/1000).toFixed(0)+"K" : best);
-      // combo popup
+      if (w.golden){ goldenCaught++; sfx.golden(); floaty(w.x, w.y - 26, "⭐ GOLDEN!", "#ffd166"); }
+      else sfx.catch(combo);
+      floaty(w.x, w.y, `+${gained}`, w.golden ? "#ffd166" : "#ffe9a3");
       const c = document.getElementById("combo");
-      if (combo >= 2){ c.textContent = `COMBO x${combo}  +${gained}`; c.style.opacity = 1;
+      if (combo >= 2){ c.textContent = `COMBO x${combo}`; c.style.opacity = 1;
         setTimeout(()=> c.style.opacity = 0, 800); }
       ripples.push({x: w.x, y: w.y, r: w.size*0.5, v: 220, a: 1});
       ripples.push({x: w.x, y: w.y, r: w.size*0.2, v: 380, a: 0.8});
-      whales.splice(i, 1);
+      whales.splice(i, 1); hud();
       return;
     }
   }
-  // missed — small blue ripple
   ripples.push({x, y, r: 4, v: 120, a: 0.35});
-  combo = 0;
+  combo = 0; sfx.miss();
 });
 
-document.getElementById("btn-start").addEventListener("click", () => {
-  document.getElementById("start").style.display = "none";
-  running = true;
-  spawnTimer = 0.3;
+// ============ SONAR ============
+function sonar(){
+  if (!running || paused || score < 200 || sonarCD > 0) return;
+  score -= 200; sonarUntil = performance.now() + 3000; sonarCD = 8;
+  sfx.sonar(); hud();
+  floaty(W/2, H*0.5, "◉ SONAR PULSE", "#7dd8ff");
+}
+addEventListener("keydown", e => {
+  if (e.code === "Space"){ e.preventDefault(); sonar(); }
+  if (e.key === "p" || e.key === "P") togglePause();
 });
+
+// ============ PAUSE ============
+function togglePause(){
+  if (!running) return;
+  paused = !paused;
+  document.getElementById("pause-ov").style.display = paused ? "flex" : "none";
+}
+document.getElementById("btn-pause").addEventListener("click", togglePause);
+
+// ============ START / END ============
+function startGame(m){
+  mode = m;
+  audio();  // unlock sound on gesture
+  whales = []; ripples = []; floaties = [];
+  score = 0; caught = 0; best = 0; combo = 0; maxCombo = 0; goldenCaught = 0; clicks = 0; hits = 0;
+  wave = 1; waveTimer = 0; timeLeft = 60; sonarUntil = 0; sonarCD = 0;
+  running = true; paused = false;
+  document.getElementById("start").style.display = "none";
+  document.getElementById("end").style.display = "none";
+  document.getElementById("timer").style.display = mode === "timed" ? "" : "none";
+  spawnTimer = 0.3; hud();
+  sfx.wave();
+}
+function endGame(){
+  running = false;
+  sfx.end();
+  const acc = clicks ? Math.round(hits/clicks*100) : 0;
+  document.getElementById("e-score").textContent = Math.max(0,score).toLocaleString("en-US");
+  document.getElementById("e-caught").textContent = caught;
+  document.getElementById("e-best").textContent = "$" + (best >= 1000 ? (best/1000).toFixed(0)+"K" : best.toFixed(0));
+  document.getElementById("e-combo").textContent = "×" + (1 + Math.min(maxCombo-1<0?0:maxCombo-1,5)*0.5).toFixed(1) + (maxCombo>1? ` (${maxCombo} chain)` : "");
+  document.getElementById("e-acc").textContent = acc + "%";
+  document.getElementById("e-gold").textContent = goldenCaught;
+  // high score per mode
+  const key = "wh_" + mode;
+  const prev = parseInt(localStorage.getItem(key) || "0");
+  const rec = document.getElementById("newrecord");
+  if (score > prev){ localStorage.setItem(key, score); rec.style.display = "block"; }
+  else rec.style.display = "none";
+  document.getElementById("end-title").textContent = mode === "timed" ? "TIME'S UP!" : "HUNT OVER";
+  // share intent
+  const txt = encodeURIComponent(`🐋 ${score.toLocaleString("en-US")} pts in Whale Hunter — catching REAL @nansen_ai smart-money flows. Biggest: $${best>=1000?(best/1000).toFixed(0)+"K":best.toFixed(0)}. Try to beat me!\n\ngithub.com/aasunbul/nansen-whale-hunter\n#MeridianBuildathon`);
+  document.getElementById("btn-share").href = "https://x.com/intent/tweet?text=" + txt;
+  document.getElementById("end").style.display = "flex";
+}
+document.getElementById("btn-timed").addEventListener("click", () => startGame("timed"));
+document.getElementById("btn-endless").addEventListener("click", () => startGame("endless"));
+document.getElementById("btn-again").addEventListener("click", () => { document.getElementById("end").style.display = "none"; document.getElementById("start").style.display = "flex"; });
 </script>
 </body>
 </html>

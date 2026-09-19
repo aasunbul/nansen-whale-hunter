@@ -1,0 +1,7 @@
+🐋 Whale Hunter — an arcade game where every whale is a REAL live smart-money flow from @nansen_ai.
+
+Biggest catch today: BTCB $311K. Miss it and it dives. ⭐ Golden whales = $100K+ flows.
+
+The ocean refreshes daily from the API. Built for the Nansen #MeridianBuildathon 🧭
+
+🎮 https://github.com/aasunbul/nansen-whale-hunter
