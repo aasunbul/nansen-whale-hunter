@@ -199,7 +199,31 @@ function diveAlert(w){
 }
 
 // ============ DATA ============
+const LIVE = { url: "http://127.0.0.1:8083/api/live", ok: false, lastTry: 0 };
+async function fetchLive(){
+  // live server (whale_live_server.py) — fresh smart-money flows, no API key in page
+  try {
+    const r = await fetch(LIVE.url, {cache: "no-store"});
+    if (r.ok) {
+      const j = await r.json();
+      LIVE.ok = true;
+      return j.flows || [];
+    }
+  } catch(e) { LIVE.ok = false; }
+  return null;
+}
 async function loadFlows(){
+  // 1) try live server (fresh data, rotating chains)
+  const live = await fetchLive();
+  if (live && live.length) {
+    flowPool = live.filter(x => Math.abs(x.net_24h) > 500);
+    flowPool.sort((a,b) => Math.abs(b.net_24h) - Math.abs(a.net_24h));
+    document.getElementById("s-feed").textContent = flowPool.length + " LIVE";
+    document.getElementById("live-dot").textContent = "● LIVE";
+    tprint(`<span class="t-ok">◉ live feed connected — fresh nansen flows (chain: ${live[0] ? live[0].chain : "?"})</span>`);
+    return flowPool.length;
+  }
+  // 2) fallback: freshest daily snapshot
   const cands = [];
   for (let d = 0; d <= 14; d++) {
     const dt = new Date(Date.now() - d*864e5).toISOString().slice(0,10).replace(/-/g,"");
@@ -211,13 +235,26 @@ async function loadFlows(){
       flowPool = j.flows.filter(x => Math.abs(x.net_24h) > 500);
       flowPool.sort((a,b) => Math.abs(b.net_24h) - Math.abs(a.net_24h));
       document.getElementById("s-feed").textContent = flowPool.length + " flows";
-      tprint(`<span class="t-dim">feed ${f} · ${flowPool.length} live flows</span>`);
+      document.getElementById("live-dot").textContent = "● SNAPSHOT";
+      tprint(`<span class="t-dim">feed ${f} · ${flowPool.length} flows (snapshot mode)</span>`);
       return flowPool.length;
     }} catch(e){}
   }
   document.getElementById("s-feed").textContent = "offline";
   return 0;
 }
+// keep the ocean fresh: pull live every 2 min (rate-guarded server-side)
+setInterval(async () => {
+  const live = await fetchLive();
+  if (live && live.length) {
+    const fresh = live.filter(x => Math.abs(x.net_24h) > 500);
+    if (fresh.length) {
+      flowPool = fresh.sort((a,b) => Math.abs(b.net_24h) - Math.abs(a.net_24h));
+      document.getElementById("s-feed").textContent = flowPool.length + " LIVE";
+      document.getElementById("live-dot").textContent = "● LIVE";
+    }
+  }
+}, 120000);
 
 const CHAIN_COLORS = { ethereum:"#8ba3ff", solana:"#c79bff", base:"#6fd6ff", arbitrum:"#7ce8c7", bnb:"#ffd166", bsc:"#ffd166", polygon:"#ff9bd2" };
 const chainColor = ch => CHAIN_COLORS[(ch||"").toLowerCase()] || "#9fc3e0";
