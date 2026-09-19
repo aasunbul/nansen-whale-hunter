@@ -1,6 +1,5 @@
 """Whale Hunter — daily flows harvester (sustainable engine)
-Grabs latest smart-money netflows via key pool → data/flows_YYYYMMDD.json
-Runs daily via cron → the game stays alive forever, credits become the product's breath.
+Pulls smart-money netflows (1h/24h/7d/30d) for 6 chains via key pool → data/flows_YYYYMMDD.json
 """
 import json, os, sys, time
 sys.path.insert(0, "C:/Users/aasun/nansen-bot")
@@ -23,14 +22,20 @@ for ch in CHAINS:
         if not rows:
             break
         for f in rows:
-            all_flows.append({"token": (f.get("token_symbol") or "?").strip(),
-                              "chain": f.get("chain") or ch,
-                              "net_24h": f.get("net_flow_24h_usd") or 0,
-                              "traders": f.get("trader_count") or 0,
-                              "sector": (f.get("token_sectors") or ["?"])[0],
-                              "mcap": f.get("market_cap_usd") or 0})
+            all_flows.append({
+                "token": (f.get("token_symbol") or "?").strip(),
+                "token_address": f.get("token_address") or "",
+                "chain": f.get("chain") or ch,
+                "net_1h": f.get("net_flow_1h_usd") or 0,
+                "net_24h": f.get("net_flow_24h_usd") or 0,
+                "net_7d": f.get("net_flow_7d_usd") or 0,
+                "net_30d": f.get("net_flow_30d_usd") or 0,
+                "traders": f.get("trader_count") or 0,
+                "sector": (f.get("token_sectors") or ["?"])[0],
+                "mcap": f.get("market_cap_usd") or 0,
+            })
         pg = body.get("pagination", {}) if isinstance(body, dict) else {}
-        if pg.get("is_last_page", True) or page >= 3:   # up to 3 pages/chain per day
+        if pg.get("is_last_page", True) or page >= 3:
             break
         page += 1
 
