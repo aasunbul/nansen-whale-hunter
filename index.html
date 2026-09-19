@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐋 Whale Hunter — Nansen</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#03111f; color:#cfe8ff; font-family:'Segoe UI',system-ui,sans-serif; overflow:hidden; height:100vh; user-select:none; }
+  #hud { position:fixed; top:0; left:0; right:0; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; z-index:10;
+         background:linear-gradient(180deg,rgba(3,17,31,.95),transparent); }
+  #hud .logo { font-size:17px; font-weight:700; letter-spacing:2px; }
+  #hud .logo b { color:#ffd166; }
+  #score-box { display:flex; gap:22px; font-size:12px; color:#8ab6d6; }
+  #score-box b { color:#ffe9a3; font-size:17px; display:block; font-family:monospace; }
+  #start { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:30; background:rgba(3,17,31,.96); text-align:center; }
+  #start h1 { font-size:44px; color:#ffd166; text-shadow:0 0 30px rgba(255,209,102,.4); }
+  #start p { margin-top:14px; max-width:560px; line-height:1.7; color:#9fc3e0; font-size:14px; }
+  #start button { margin-top:26px; font-size:18px; padding:13px 44px; background:#ffd166; color:#03111f; border:none; border-radius:10px; cursor:pointer; font-weight:700; }
+  #start button:hover { transform:scale(1.05); }
+  #fact { position:fixed; bottom:14px; left:50%; transform:translateX(-50%); font-size:12px; color:#5a8aa8; z-index:10; text-align:center; width:90%; }
+  #combo { position:fixed; top:70px; left:50%; transform:translateX(-50%); font-size:22px; font-weight:800; color:#ffd166; z-index:10; opacity:0; transition:opacity .3s; text-shadow:0 0 12px rgba(255,209,102,.6); }
+  canvas { display:block; cursor:crosshair; }
+</style>
+</head>
+<body>
+<div id="hud">
+  <div class="logo">🐋 <b>WHALE</b> HUNTER</div>
+  <div id="score-box">
+    <div>SCORE<b id="s-score">0</b></div>
+    <div>WHALES CAUGHT<b id="s-caught">0</b></div>
+    <div>BEST CATCH<b id="s-best">$0</b></div>
+    <div>LIVE FEED<b id="s-feed">—</b></div>
+  </div>
+</div>
+<div id="combo"></div>
+<div id="fact">Every whale is a REAL smart-money flow from Nansen — token symbol, chain and USD size are live.</div>
+<div id="start">
+  <h1>🐋 WHALE HUNTER</h1>
+  <p>Hunt real whales from live Nansen smart-money flows. Big inflows surface as whales — click to catch them before they dive. The bigger the flow, the bigger the whale, the bigger the score. Rare ⭐ GOLDEN whales = mega flows over $100K.</p>
+  <button id="btn-start">START HUNT</button>
+</div>
+<canvas id="sea"></canvas>
+<script>
+const cv = document.getElementById("sea"), ctx = cv.getContext("2d");
+let W, H;
+function resize(){ W = cv.width = innerWidth; H = cv.height = innerHeight; }
+addEventListener("resize", resize); resize();
+
+// ============ GAME STATE ============
+let whales = [], ripples = [], bubbles = [];
+let score = 0, caught = 0, best = 0, combo = 0, comboTimer = 0;
+let running = false, spawnTimer = 0, feedName = "—";
+let flowPool = [];  // real flows from Nansen
+let flowIdx = 0;
+
+// ============ REAL DATA ============
+async function loadFlows(){
+  const day = new Date().toISOString().slice(0,10).replace(/-/g,"");
+  const cands = [];
+  for (let d = 0; d <= 12; d++) {
+    const dt = new Date(Date.now() - d*864e5).toISOString().slice(0,10).replace(/-/g,"");
+    cands.push(`data/flows_${dt}.json`);
+  }
+  for (const f of cands) {
+    try { const r = await fetch(f); if (r.ok) {
+      const j = await r.json();
+      flowPool = j.flows.filter(x => Math.abs(x.net_24h) > 500);
+      // sort big first for drama
+      flowPool.sort((a,b) => Math.abs(b.net_24h) - Math.abs(a.net_24h));
+      document.getElementById("s-feed").textContent = flowPool.length + " flows";
+      return;
+    }} catch(e){}
+  }
+  document.getElementById("s-feed").textContent = "offline";
+}
+loadFlows();
+setInterval(loadFlows, 15*60*1000); // refresh every 15 min
+
+// ============ WHALE SPAWNER (from real flows) ============
+function nextFlow(){
+  if (!flowPool.length) return {token:"???","chain":"?",net_24h: 10000, traders: 1};
+  const f = flowPool[flowIdx % flowPool.length];
+  flowIdx += 1 + Math.floor(Math.random()*3);
+  return f;
+}
+
+function spawnWhale(){
+  const f = nextFlow();
+  const usd = Math.abs(f.net_24h);
+  const golden = usd >= 100000;
+  const size = Math.min(30 + Math.sqrt(usd)/55, 85); // 30..85 px
+  const dir = Math.random() < .5 ? 1 : -1;
+  whales.push({
+    x: dir === 1 ? -size*2 : W + size*2,
+    y: H*0.28 + Math.random()*H*0.58,
+    vx: dir * (0.55 + Math.random()*0.7 + (golden?0.4:0)),
+    size, golden, f,
+    phase: Math.random()*7,
+    diveAfter: 6 + Math.random()*7,      // seconds on screen
+    age: 0,
+    tailPhase: Math.random()*7,
+  });
+}
+
+// ============ DRAWING ============
+function drawWhale(w){
+  const {x, y, size, golden} = w;
+  ctx.save();
+  ctx.translate(x, y);
+  const face = w.vx > 0 ? 1 : -1;
+  ctx.scale(face, 1);
+  const bob = Math.sin(w.phase) * size*0.06;
+  ctx.translate(0, bob);
+
+  // glow for golden
+  if (golden) { ctx.shadowColor = "#ffd166"; ctx.shadowBlur = 34; }
+
+  // body
+  const grad = ctx.createLinearGradient(0, -size/2, 0, size/2);
+  if (golden) { grad.addColorStop(0, "#ffe9a3"); grad.addColorStop(1, "#d4a017"); }
+  else { grad.addColorStop(0, "#7fb7d9"); grad.addColorStop(1, "#33607e"); }
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(-size*1.1, 0);
+  ctx.quadraticCurveTo(-size*0.6, -size*0.55, size*0.25, -size*0.48);
+  ctx.quadraticCurveTo(size*0.95, -size*0.42, size*1.05, -size*0.05);
+  ctx.quadraticCurveTo(size*0.95, size*0.16, size*0.3, size*0.28);
+  ctx.quadraticCurveTo(-size*0.55, size*0.42, -size*1.1, 0);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // tail (animated)
+  const tail = Math.sin(w.tailPhase) * size*0.22;
+  ctx.fillStyle = golden ? "#d4a017" : "#33607e";
+  ctx.beginPath();
+  ctx.moveTo(-size*1.02, 0);
+  ctx.quadraticCurveTo(-size*1.45, tail - size*0.3, -size*1.7, tail - size*0.42);
+  ctx.quadraticCurveTo(-size*1.45, tail, -size*1.7, tail + size*0.34);
+  ctx.quadraticCurveTo(-size*1.4, tail + size*0.16, -size*1.02, 0);
+  ctx.fill();
+
+  // fin
+  ctx.beginPath();
+  ctx.moveTo(size*0.1, size*0.2);
+  ctx.quadraticCurveTo(-size*0.05, size*0.62, -size*0.38, size*0.5);
+  ctx.quadraticCurveTo(-size*0.2, size*0.3, size*0.1, size*0.2);
+  ctx.fill();
+
+  // eye
+  ctx.fillStyle = "#0a1a26";
+  ctx.beginPath(); ctx.arc(size*0.62, -size*0.12, size*0.055, 0, 7); ctx.fill();
+  // water spout sometimes
+  if (Math.sin(w.phase*0.7) > 0.93) {
+    ctx.strokeStyle = "rgba(159,195,224,.7)"; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(size*0.35, -size*0.5);
+    ctx.quadraticCurveTo(size*0.35, -size*1.0, size*0.15, -size*1.15);
+    ctx.stroke();
+  }
+
+  // token label above whale
+  const usd = Math.abs(w.f.net_24h);
+  const lbl = `${w.f.token} · $${usd >= 1000 ? (usd/1000).toFixed(0)+"K" : usd}`;
+  ctx.font = `${golden ? "700 " : ""}${Math.max(11, size*0.2)}px Segoe UI`;
+  ctx.textAlign = "center";
+  ctx.fillStyle = golden ? "#ffd166" : "#9fc3e0";
+  ctx.fillText(lbl, 0, -size*0.85 - 6);
+
+  ctx.restore();
+}
+
+// ============ GAME LOOP ============
+let last = performance.now();
+function loop(now){
+  const dt = Math.min((now - last)/1000, 0.05); last = now;
+  // deep-sea gradient
+  const sea = ctx.createLinearGradient(0, 0, 0, H);
+  sea.addColorStop(0, "#06233c"); sea.addColorStop(0.6, "#041a2f"); sea.addColorStop(1, "#020f1d");
+  ctx.fillStyle = sea; ctx.fillRect(0, 0, W, H);
+
+  // light rays
+  ctx.save(); ctx.globalAlpha = 0.06;
+  for (let i = 0; i < 5; i++){
+    const rx = (i*0.22 + 0.08) * W + Math.sin(now/4000 + i)*40;
+    ctx.fillStyle = "#9fd6ff";
+    ctx.beginPath();
+    ctx.moveTo(rx, 0); ctx.lineTo(rx+120, 0); ctx.lineTo(rx+40, H); ctx.lineTo(rx-60, H);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+
+  // bubbles
+  if (Math.random() < 0.15) bubbles.push({x: Math.random()*W, y: H+10, r: 1+Math.random()*3, v: 20+Math.random()*30});
+  ctx.strokeStyle = "rgba(159,214,255,.25)";
+  bubbles.forEach(b => { b.y -= b.v*dt; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.stroke(); });
+  bubbles = bubbles.filter(b => b.y > -10);
+
+  if (running){
+    spawnTimer -= dt;
+    if (spawnTimer <= 0){ spawnWhale(); spawnTimer = 0.9 + Math.random()*1.6; }
+
+    whales.forEach(w => {
+      w.x += w.vx * dt * 60; w.phase += dt*2.2; w.tailPhase += dt*6; w.age += dt;
+      drawWhale(w);
+    });
+    whales = whales.filter(w => w.x > -w.size*3 && w.x < W + w.size*3 && w.age < w.diveAfter);
+
+    // combo decay
+    if (comboTimer > 0){ comboTimer -= dt; if (comboTimer <= 0){ combo = 0; } }
+  }
+
+  // catch ripples
+  ripples.forEach(r => { r.r += r.v*dt; r.a -= dt*1.6;
+    ctx.strokeStyle = `rgba(255,209,102,${Math.max(r.a,0)})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, 7); ctx.stroke(); });
+  ripples = ripples.filter(r => r.a > 0);
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+// background-tab fallback: rAF dies in hidden tabs — keep the sea alive via interval
+setInterval(() => { if (document.hidden) { loop(performance.now()); } }, 100);
+cv.addEventListener("click", e => {
+  if (!running) return;
+  const x = e.clientX, y = e.clientY;
+  // topmost whale first (iterate reverse)
+  for (let i = whales.length - 1; i >= 0; i--){
+    const w = whales[i];
+    const dx = x - w.x, dy = y - w.y;
+    if (Math.abs(dx) < w.size*1.5 && Math.abs(dy) < w.size*0.9){
+      const usd = Math.abs(w.f.net_24h);
+      combo++; comboTimer = 2.2;
+      const mult = 1 + Math.min(combo-1, 5) * 0.5;      // up to x3.5
+      const pts = Math.round(usd/100) + (w.golden ? 250 : 0);
+      const gained = Math.round(pts * mult);
+      score += gained; caught++;
+      best = Math.max(best, usd);
+      document.getElementById("s-score").textContent = score.toLocaleString();
+      document.getElementById("s-caught").textContent = caught;
+      document.getElementById("s-best").textContent = "$" + (best >= 1000 ? (best/1000).toFixed(0)+"K" : best);
+      // combo popup
+      const c = document.getElementById("combo");
+      if (combo >= 2){ c.textContent = `COMBO x${combo}  +${gained}`; c.style.opacity = 1;
+        setTimeout(()=> c.style.opacity = 0, 800); }
+      ripples.push({x: w.x, y: w.y, r: w.size*0.5, v: 220, a: 1});
+      ripples.push({x: w.x, y: w.y, r: w.size*0.2, v: 380, a: 0.8});
+      whales.splice(i, 1);
+      return;
+    }
+  }
+  // missed — small blue ripple
+  ripples.push({x, y, r: 4, v: 120, a: 0.35});
+  combo = 0;
+});
+
+document.getElementById("btn-start").addEventListener("click", () => {
+  document.getElementById("start").style.display = "none";
+  running = true;
+  spawnTimer = 0.3;
+});
+</script>
+</body>
+</html>
